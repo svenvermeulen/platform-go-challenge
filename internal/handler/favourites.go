@@ -82,7 +82,7 @@ func (h *FavouritesHandler) GetFavourites(c *gin.Context) {
 		defer wg.Done()
 		audiences = h.audienceRepository.GetAudiences(audienceIDs)
 	}()
-	
+
 	chartIDs := []uuid.UUID{uuid.New(), uuid.New()}
 	var charts []model.Chart
 
@@ -93,15 +93,11 @@ func (h *FavouritesHandler) GetFavourites(c *gin.Context) {
 	}()
 
 	wg.Wait()
-	
+
 	result := model.UserFavourites{
 		Audiences: audiences,
 		Charts:    charts,
 		Insights:  insights,
 	}
 	c.IndentedJSON(http.StatusOK, result)
-}
-
-func(h *FavouritesHandler) GetCharts(ids []uuid.UUID, result chan<- []model.Chart) {
-	result <- h.chartRepository.GetCharts(ids)
 }
