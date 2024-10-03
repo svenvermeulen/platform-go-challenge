@@ -20,7 +20,7 @@ func (r *Repository) GetInsights(ids []uuid.UUID) []model.Insight {
 	// example implementation
 	// returns a number of random insights with the given id's
 	// Then delays 100μs for every item in the ids slice
-	results := make([]model.Insight, len(ids), len(ids))
+	results := make([]model.Insight, len(ids))
 
 	for i, id := range ids {
 		results[i] = model.Insight{

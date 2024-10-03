@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 
+	"svenvermeulen/platform-go-challenge/internal/repository/audience"
 	"svenvermeulen/platform-go-challenge/internal/repository/insight"
 	"svenvermeulen/platform-go-challenge/pkg/model"
 
@@ -11,12 +12,14 @@ import (
 )
 
 type FavouritesHandler struct {
-	insightRepository *insight.Repository
+	audienceRepository *audience.Repository
+	insightRepository  *insight.Repository
 }
 
-func NewFavouritesHandler(insightRepository *insight.Repository) *FavouritesHandler {
+func NewFavouritesHandler(audienceRepository *audience.Repository, insightRepository *insight.Repository) *FavouritesHandler {
 	return &FavouritesHandler{
-		insightRepository: insightRepository,
+		insightRepository:  insightRepository,
+		audienceRepository: audienceRepository,
 	}
 }
 
@@ -48,10 +51,16 @@ func (h FavouritesHandler) GetFavourites(c *gin.Context) {
 	// - using concurrency to retrieve data from multiple sources
 	// - using result paging for more responsive list endpoints
 	// - using userid from session/token for security
+	// Maybe:
+	// - graceful degradation. If the call to charts service asks for too many charts, it can time out.
+	//   the call to "favourites" could still work though, with the "charts" being empty.
 
 	// TODO: These ids should come from some repository which reads "starred items"
 	insightIDs := []uuid.UUID{uuid.New(), uuid.New(), uuid.New(), uuid.New(), uuid.New()}
 	insights := h.insightRepository.GetInsights(insightIDs)
+
+	audienceIDs := []uuid.UUID{uuid.New(), uuid.New(), uuid.New()}
+	audiences := h.audienceRepository.GetAudiences(audienceIDs)
 
 	result := model.UserFavourites{
 		Charts: []model.Chart{
@@ -67,20 +76,8 @@ func (h FavouritesHandler) GetFavourites(c *gin.Context) {
 				},
 			},
 		},
-		Insights: insights,
-		Audiences: []model.Audience{
-			{
-				Id:             uuid.New(),
-				Gender:         'm',
-				BirthCountry:   "Netherlands",
-				AgeFrom:        45,
-				AgeTo:          55,
-				HoursSpentFrom: 4,
-				HoursSpentTo:   8,
-				PurchasesFrom:  0,
-				PurchasesTo:    0,
-			},
-		},
+		Insights:  insights,
+		Audiences: audiences,
 	}
 	c.IndentedJSON(http.StatusOK, result)
 }

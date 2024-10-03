@@ -5,16 +5,18 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"svenvermeulen/platform-go-challenge/internal/handler"
+	"svenvermeulen/platform-go-challenge/internal/repository/audience"
 	"svenvermeulen/platform-go-challenge/internal/repository/insight"
 )
 
 // @title Favourites API
 func main() {
 	// set up repositories
-	favouritesRepo := insight.NewRepository()
+	audienceRepo := audience.NewRepository()
+	insightRepo := insight.NewRepository()
 
 	// set up http handlers
-	favouritesHandler := handler.NewFavouritesHandler(favouritesRepo)
+	favouritesHandler := handler.NewFavouritesHandler(audienceRepo, insightRepo)
 
 	// set up router to map http routes to handler functions
 	router := SetupRouter(favouritesHandler)
