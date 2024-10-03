@@ -1,6 +1,7 @@
 package favourite
 
 import (
+	"math/rand/v2"
 	"testing"
 
 	"github.com/google/uuid"
@@ -14,10 +15,10 @@ func TestGetNonexistingUser(t *testing.T) {
 	r := NewRepository()
 
 	// WHEN I retrieve a user's favourites
-	f := r.GetFavourites(uuid.New())
+	f := r.GetFavourites(uuid.New(), 0, 100)
 
 	// THEN I get an empty map
-	assert.NotNil(t, f, "GetFavourites must return empty map for non-existent user uuid")
+	assert.NotNil(t, f, "GetFavourites must return empty result for non-existent user uuid")
 }
 
 func TestAddAndRetrieveCorrectFavourite(t *testing.T) {
@@ -34,15 +35,82 @@ func TestAddAndRetrieveCorrectFavourite(t *testing.T) {
 	r.AddFavourite(user2Id, favourite2Id, "insight")
 
 	// WHEN I retrieve each user's favourites
-	f1 := r.GetFavourites(user1Id)
-	f2 := r.GetFavourites(user2Id)
+	f1 := r.GetFavourites(user1Id, 0, 100)
+	f2 := r.GetFavourites(user2Id, 0, 100)
 
 	// THEN I get the correct favourites for each user
-	assert.Equal(t, f1, map[uuid.UUID]string {
-		favourite1Id: "chart",
-	} )
+	assert.Equal(t, f1, favouriteEntries{
+		{
+			favouriteId:  favourite1Id,
+			resourceType: "chart",
+		},
+	},
+	)
 
-	assert.Equal(t, f2, map[uuid.UUID]string {
-		favourite2Id: "insight",
-	} )
+	assert.Equal(t, f2, favouriteEntries{
+		{
+			favouriteId:  favourite2Id,
+			resourceType: "insight",
+		},
+	},
+	)
+}
+
+func TestPaging(t *testing.T) {
+	// Add 25 favourites for one user and retrieve pages of ten.
+	// Repo should return first ten, next ten, last five favourites
+
+	// GIVEN a repo with user's 25 favourites
+	r := NewRepository()
+
+	userId := uuid.New()
+	favourites := make([]uuid.UUID, 25) // used for assertions later
+	for i := range 25 {
+		favouriteId := uuid.New()
+		resourceType := []string{"audience", "chart", "insight"}[rand.IntN(3)]
+		favourites[i] = favouriteId
+		r.AddFavourite(userId, favouriteId, resourceType)
+	}
+
+	// WHEN I retrieve three pages of ten results
+	page1 := r.GetFavourites(userId, 0, 10)
+	page2 := r.GetFavourites(userId, 10, 10)
+	page3 := r.GetFavourites(userId, 20, 5)
+
+	// THEN I get the first ten, second ten, last five results
+	page1keys := make([]uuid.UUID, 0, len(page1))
+	for _, f := range page1 {
+		page1keys = append(page1keys, f.favouriteId)
+	}
+	assert.Equal(t, favourites[0:10], page1keys)
+
+	page2keys := make([]uuid.UUID, 0, len(page2))
+	for _, f := range page2 {
+		page2keys = append(page2keys, f.favouriteId)
+	}
+	assert.Equal(t, favourites[10:20], page2keys)
+
+	page3keys := make([]uuid.UUID, 0, len(page3))
+	for _, f := range page3 {
+		page3keys = append(page3keys, f.favouriteId)
+	}
+	assert.Equal(t, favourites[20:25], page3keys)
+}
+
+func TestPagingStartOutOfBounds(t *testing.T) {
+	// GIVEN a repo with user's 5 favourites
+	r := NewRepository()
+
+	userId := uuid.New()
+	for _ = range 5 {
+		favouriteId := uuid.New()
+		resourceType := []string{"audience", "chart", "insight"}[rand.IntN(3)]
+		r.AddFavourite(userId, favouriteId, resourceType)
+	}
+
+	// WHEN I retrieve item n+1
+	f := r.GetFavourites(userId, 6, 1)
+
+	// I get an empty list of favourites
+	assert.Equal(t, 0, len(f))
 }
