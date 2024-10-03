@@ -19,16 +19,16 @@ func NewFavouritesHandler() *FavouritesHandler {
 // GetUserFavourites godoc
 //
 // @Summary     Get user favourites
-// @Description gets list of favourite
+// @Description gets list of favourites for a specified user
 // @Tags        favourites
 // @Produce     json
-// @Success     200	{object}	[]model.Favourite
+// @Success     200	{object}	[]model.UserFavourite
 // @Failure     400
 // @Failure     404
 // @Failure     500
-// @Router      /favourites [get]
+// @Router      /favourites/:userid [get]
 func (h FavouritesHandler) GetFavourites(c *gin.Context) {
-	_  = c.Param("userid")
+	_  = c.Param("userid")  // TODO: Should come from session / token, not request
 
 	result := model.UserFavourites{
 		Charts: []model.Chart{

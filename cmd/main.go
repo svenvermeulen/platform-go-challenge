@@ -7,7 +7,7 @@ import (
 	"svenvermeulen/platform-go-challenge/api/handler"
 )
 
-// @title Pricing API
+// @title Favourites API
 func main() {
 	router := SetupRouter()
 	router.Run("localhost:8086")
@@ -19,7 +19,7 @@ func SetupRouter() *gin.Engine {
 	favouritesHandler := handler.NewFavouritesHandler()
 
 	// setup routes
-	router.GET("/users/:userid/favourites/", favouritesHandler.GetFavourites)
+	router.GET("/favourites", favouritesHandler.GetFavourites)
 
 	return router
 }
