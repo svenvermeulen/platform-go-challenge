@@ -4,19 +4,26 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 
-	"svenvermeulen/platform-go-challenge/api/handler"
+	"svenvermeulen/platform-go-challenge/internal/handler"
+	"svenvermeulen/platform-go-challenge/internal/repository/insight"
 )
 
 // @title Favourites API
 func main() {
-	router := SetupRouter()
+	// set up repositories
+	favouritesRepo := insight.NewRepository()
+
+	// set up http handlers
+	favouritesHandler := handler.NewFavouritesHandler(favouritesRepo)
+
+	// set up router to map http routes to handler functions
+	router := SetupRouter(favouritesHandler)
 	router.Run("localhost:8086")
 }
 
-func SetupRouter() *gin.Engine {
+func SetupRouter(favouritesHandler *handler.FavouritesHandler) *gin.Engine {
 	log.Info("Setting up gin router")
 	router := gin.Default()
-	favouritesHandler := handler.NewFavouritesHandler()
 
 	// setup routes
 	router.GET("/favourites", favouritesHandler.GetFavourites)

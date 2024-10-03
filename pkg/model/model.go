@@ -20,27 +20,27 @@ type DataPoint struct {
 }
 
 type Insight struct {
-	Id uuid.UUID
+	Id          uuid.UUID
 	Description string
 }
 
 type Audience struct {
-	Id uuid.UUID
-	Gender rune
-	BirthCountry string
-	AgeFrom int
-	AgeTo int
+	Id             uuid.UUID
+	Gender         rune
+	BirthCountry   string
+	AgeFrom        int
+	AgeTo          int
 	HoursSpentFrom int
-	HoursSpentTo int
-	PurchasesFrom int
-	PurchasesTo int
+	HoursSpentTo   int
+	PurchasesFrom  int
+	PurchasesTo    int
 }
 
 type User struct {
-	Id uuid.UUID
+	Id        uuid.UUID
 	FirstName string
-	LastName string
-	Gender rune
+	LastName  string
+	Gender    rune
 	BirthDate time.Time
 }
 
