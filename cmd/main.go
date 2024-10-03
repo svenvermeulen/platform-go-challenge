@@ -6,6 +6,7 @@ import (
 
 	"svenvermeulen/platform-go-challenge/internal/handler"
 	"svenvermeulen/platform-go-challenge/internal/repository/audience"
+	"svenvermeulen/platform-go-challenge/internal/repository/chart"
 	"svenvermeulen/platform-go-challenge/internal/repository/insight"
 )
 
@@ -13,10 +14,11 @@ import (
 func main() {
 	// set up repositories
 	audienceRepo := audience.NewRepository()
+	chartRepo := chart.NewRepository()
 	insightRepo := insight.NewRepository()
 
 	// set up http handlers
-	favouritesHandler := handler.NewFavouritesHandler(audienceRepo, insightRepo)
+	favouritesHandler := handler.NewFavouritesHandler(audienceRepo, chartRepo, insightRepo)
 
 	// set up router to map http routes to handler functions
 	router := SetupRouter(favouritesHandler)

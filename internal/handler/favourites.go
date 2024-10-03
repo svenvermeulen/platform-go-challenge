@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"svenvermeulen/platform-go-challenge/internal/repository/audience"
+	"svenvermeulen/platform-go-challenge/internal/repository/chart"
 	"svenvermeulen/platform-go-challenge/internal/repository/insight"
 	"svenvermeulen/platform-go-challenge/pkg/model"
 
@@ -13,13 +14,15 @@ import (
 
 type FavouritesHandler struct {
 	audienceRepository *audience.Repository
+	chartRepository    *chart.Repository
 	insightRepository  *insight.Repository
 }
 
-func NewFavouritesHandler(audienceRepository *audience.Repository, insightRepository *insight.Repository) *FavouritesHandler {
+func NewFavouritesHandler(audienceRepository *audience.Repository, chartRepository *chart.Repository, insightRepository *insight.Repository) *FavouritesHandler {
 	return &FavouritesHandler{
-		insightRepository:  insightRepository,
 		audienceRepository: audienceRepository,
+		chartRepository:    chartRepository,
+		insightRepository:  insightRepository,
 	}
 }
 
@@ -62,22 +65,13 @@ func (h FavouritesHandler) GetFavourites(c *gin.Context) {
 	audienceIDs := []uuid.UUID{uuid.New(), uuid.New(), uuid.New()}
 	audiences := h.audienceRepository.GetAudiences(audienceIDs)
 
+	chartIDs := []uuid.UUID{uuid.New(), uuid.New()}
+	charts := h.chartRepository.GetCharts(chartIDs)
+
 	result := model.UserFavourites{
-		Charts: []model.Chart{
-			{
-				Id:         uuid.New(),
-				Title:      "My first favourite chart",
-				XAxisTitle: "Time",
-				YAxisTitle: "Number of clicks",
-				DataPoints: []model.DataPoint{
-					{X: 0.0, Y: 10.0},
-					{X: 1.0, Y: 12.0},
-					{X: 2.0, Y: 15.0},
-				},
-			},
-		},
-		Insights:  insights,
 		Audiences: audiences,
+		Charts:    charts,
+		Insights:  insights,
 	}
 	c.IndentedJSON(http.StatusOK, result)
 }
