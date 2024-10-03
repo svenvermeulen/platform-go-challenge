@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"sync"
 
 	"svenvermeulen/platform-go-challenge/internal/repository/audience"
 	"svenvermeulen/platform-go-challenge/internal/repository/chart"
@@ -37,7 +38,7 @@ func NewFavouritesHandler(audienceRepository *audience.Repository, chartReposito
 // @Failure     404
 // @Failure     500
 // @Router      /favourites/:userid [get]
-func (h FavouritesHandler) GetFavourites(c *gin.Context) {
+func (h *FavouritesHandler) GetFavourites(c *gin.Context) {
 	_ = c.Param("userid") // TODO: Should come from session / token, not request
 
 	// What I'll probably do is
@@ -59,19 +60,48 @@ func (h FavouritesHandler) GetFavourites(c *gin.Context) {
 	//   the call to "favourites" could still work though, with the "charts" being empty.
 
 	// TODO: These ids should come from some repository which reads "starred items"
+
+	var wg sync.WaitGroup
+
+	// INSIGHTS
 	insightIDs := []uuid.UUID{uuid.New(), uuid.New(), uuid.New(), uuid.New(), uuid.New()}
-	insights := h.insightRepository.GetInsights(insightIDs)
+	var insights []model.Insight
 
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		insights = h.insightRepository.GetInsights(insightIDs)
+	}()
+
+	// AUDIENCES
 	audienceIDs := []uuid.UUID{uuid.New(), uuid.New(), uuid.New()}
-	audiences := h.audienceRepository.GetAudiences(audienceIDs)
+	var audiences []model.Audience
 
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		audiences = h.audienceRepository.GetAudiences(audienceIDs)
+	}()
+	
 	chartIDs := []uuid.UUID{uuid.New(), uuid.New()}
-	charts := h.chartRepository.GetCharts(chartIDs)
+	var charts []model.Chart
 
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		charts = h.chartRepository.GetCharts(chartIDs)
+	}()
+
+	wg.Wait()
+	
 	result := model.UserFavourites{
 		Audiences: audiences,
 		Charts:    charts,
 		Insights:  insights,
 	}
 	c.IndentedJSON(http.StatusOK, result)
+}
+
+func(h *FavouritesHandler) GetCharts(ids []uuid.UUID, result chan<- []model.Chart) {
+	result <- h.chartRepository.GetCharts(ids)
 }
