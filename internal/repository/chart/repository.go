@@ -16,13 +16,13 @@ func NewRepository() *Repository {
 	return &Repository{}
 }
 
-func (r *Repository) GetCharts(ids []uuid.UUID) []model.Chart {
+func (r *Repository) GetCharts(ids []uuid.UUID) map[uuid.UUID]*model.Chart {
 	// example implementation
 	// returns a number of random charts with the given id's
 	// This simulates an expensive service call so it will delay relatively long for every item in the ids slice
-	results := make([]model.Chart, len(ids))
+	results := make(map[uuid.UUID]*model.Chart, len(ids))
 
-	for i, id := range ids {
+	for _, id := range ids {
 		resource := []string{"sales", "clicks", "whatever"}[rand.IntN(3)]
 		numPoints := rand.IntN(100)
 		points := make([]model.DataPoint, numPoints)
@@ -31,7 +31,7 @@ func (r *Repository) GetCharts(ids []uuid.UUID) []model.Chart {
 			points[p].Y = float64(2 * p)
 		}
 
-		results[i] = model.Chart{
+		results[id] = &model.Chart{
 			Id:         id,
 			Title:      fmt.Sprintf("%s chart number %d", resource, rand.IntN(10)),
 			XAxisTitle: "time",

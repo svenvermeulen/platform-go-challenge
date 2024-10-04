@@ -15,15 +15,15 @@ func NewRepository() *Repository {
 	return &Repository{}
 }
 
-func (r *Repository) GetAudiences(ids []uuid.UUID) []model.Audience {
+func (r *Repository) GetAudiences(ids []uuid.UUID) map[uuid.UUID]*model.Audience {
 	// example implementation
 	// returns a subset of a number of random-generated audiences, with the provided ids
 
 	// Does a fixed small delay. This is slow-changing data and would probably
 	// be served from a in-memory cache anyway.
-	results := make([]model.Audience, len(ids))
+	results := make(map[uuid.UUID]*model.Audience, len(ids))
 
-	for i, id := range ids {
+	for _, id := range ids {
 		ageFrom := 15 + rand.IntN(15)
 		ageTo := ageFrom + rand.IntN(60)
 
@@ -33,7 +33,7 @@ func (r *Repository) GetAudiences(ids []uuid.UUID) []model.Audience {
 		purchasesFrom := rand.IntN(3)
 		purchasesTo := rand.IntN(5)
 
-		results[i] = model.Audience{
+		results[id] = &model.Audience{
 			Id:             id,
 			Gender:         []rune{'m', 'f', '?'}[rand.IntN(3)],
 			BirthCountry:   []string{"United Kingdom", "Greece", "Netherlands"}[rand.IntN(3)],

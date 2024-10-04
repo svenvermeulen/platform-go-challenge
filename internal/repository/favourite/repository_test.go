@@ -41,16 +41,16 @@ func TestAddAndRetrieveCorrectFavourite(t *testing.T) {
 	// THEN I get the correct favourites for each user
 	assert.Equal(t, f1, favouriteEntries{
 		{
-			favouriteId:  favourite1Id,
-			resourceType: "chart",
+			FavouriteId:  favourite1Id,
+			ResourceType: "chart",
 		},
 	},
 	)
 
 	assert.Equal(t, f2, favouriteEntries{
 		{
-			favouriteId:  favourite2Id,
-			resourceType: "insight",
+			FavouriteId:  favourite2Id,
+			ResourceType: "insight",
 		},
 	},
 	)
@@ -80,19 +80,19 @@ func TestPaging(t *testing.T) {
 	// THEN I get the first ten, second ten, last five results
 	page1keys := make([]uuid.UUID, 0, len(page1))
 	for _, f := range page1 {
-		page1keys = append(page1keys, f.favouriteId)
+		page1keys = append(page1keys, f.FavouriteId)
 	}
 	assert.Equal(t, favourites[0:10], page1keys)
 
 	page2keys := make([]uuid.UUID, 0, len(page2))
 	for _, f := range page2 {
-		page2keys = append(page2keys, f.favouriteId)
+		page2keys = append(page2keys, f.FavouriteId)
 	}
 	assert.Equal(t, favourites[10:20], page2keys)
 
 	page3keys := make([]uuid.UUID, 0, len(page3))
 	for _, f := range page3 {
-		page3keys = append(page3keys, f.favouriteId)
+		page3keys = append(page3keys, f.FavouriteId)
 	}
 	assert.Equal(t, favourites[20:25], page3keys)
 }

@@ -6,6 +6,7 @@ import (
 
 	"svenvermeulen/platform-go-challenge/internal/repository/audience"
 	"svenvermeulen/platform-go-challenge/internal/repository/chart"
+	"svenvermeulen/platform-go-challenge/internal/repository/favourite"
 	"svenvermeulen/platform-go-challenge/internal/repository/insight"
 	"svenvermeulen/platform-go-challenge/pkg/model"
 
@@ -14,16 +15,21 @@ import (
 )
 
 type FavouritesHandler struct {
-	audienceRepository *audience.Repository
-	chartRepository    *chart.Repository
-	insightRepository  *insight.Repository
+	favouriteRepository *favourite.Repository
+	audienceRepository  *audience.Repository
+	chartRepository     *chart.Repository
+	insightRepository   *insight.Repository
 }
 
-func NewFavouritesHandler(audienceRepository *audience.Repository, chartRepository *chart.Repository, insightRepository *insight.Repository) *FavouritesHandler {
+func NewFavouritesHandler(favouriteRepository *favourite.Repository,
+	audienceRepository *audience.Repository,
+	chartRepository *chart.Repository,
+	insightRepository *insight.Repository) *FavouritesHandler {
 	return &FavouritesHandler{
-		audienceRepository: audienceRepository,
-		chartRepository:    chartRepository,
-		insightRepository:  insightRepository,
+		favouriteRepository: favouriteRepository,
+		audienceRepository:  audienceRepository,
+		chartRepository:     chartRepository,
+		insightRepository:   insightRepository,
 	}
 }
 
@@ -39,7 +45,7 @@ func NewFavouritesHandler(audienceRepository *audience.Repository, chartReposito
 // @Failure     500
 // @Router      /favourites/:userid [get]
 func (h *FavouritesHandler) GetFavourites(c *gin.Context) {
-	_ = c.Param("userid") // TODO: Should come from session / token, not request
+	userId, _ := uuid.ParseBytes([]byte{0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 6, 7}) // TODO: Should come from session / token, not request
 
 	// What I'll probably do is
 	// - get "start after" and "page size" parameters from the request, for paging
@@ -63,19 +69,36 @@ func (h *FavouritesHandler) GetFavourites(c *gin.Context) {
 
 	var wg sync.WaitGroup
 
-	// INSIGHTS
-	insightIDs := []uuid.UUID{uuid.New(), uuid.New(), uuid.New(), uuid.New(), uuid.New()}
-	var insights []model.Insight
+	// TODO: Paging in controller method (already supported by favourites repo)
+	userFavourites := h.favouriteRepository.GetFavourites(userId, 0, 10)
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		insights = h.insightRepository.GetInsights(insightIDs)
-	}()
+	// userFavourites now contains the first page of favourites of various types (audience|chart|insight)
+	// I extract these into 3 slices of IDs which I'll use to query the various repositories
+	// Then I wait for all the queries to return and stitch the results back together
+
+	audienceIDs := make([]uuid.UUID, 0, len(userFavourites))
+	insightIDs := make([]uuid.UUID, 0, len(userFavourites))
+	chartIDs := make([]uuid.UUID, 0, len(userFavourites))
+
+	for _, f := range userFavourites {
+		switch f.ResourceType {
+		case "audience": {
+			audienceIDs = append(audienceIDs, f.FavouriteId)
+		}
+		case "chart": {
+			chartIDs = append(chartIDs, f.FavouriteId)
+		}
+		case "insight": {
+			insightIDs = append(insightIDs, f.FavouriteId)
+		}
+		default: {
+			// would log an error here to alert engineer but let request succeed
+		}
+		}
+	}
 
 	// AUDIENCES
-	audienceIDs := []uuid.UUID{uuid.New(), uuid.New(), uuid.New()}
-	var audiences []model.Audience
+	var audiences map[uuid.UUID]*model.Audience
 
 	wg.Add(1)
 	go func() {
@@ -83,8 +106,8 @@ func (h *FavouritesHandler) GetFavourites(c *gin.Context) {
 		audiences = h.audienceRepository.GetAudiences(audienceIDs)
 	}()
 
-	chartIDs := []uuid.UUID{uuid.New(), uuid.New()}
-	var charts []model.Chart
+	// CHARTS
+	var charts map[uuid.UUID]*model.Chart
 
 	wg.Add(1)
 	go func() {
@@ -92,12 +115,37 @@ func (h *FavouritesHandler) GetFavourites(c *gin.Context) {
 		charts = h.chartRepository.GetCharts(chartIDs)
 	}()
 
+	// INSIGHTS
+	var insights map[uuid.UUID]*model.Insight
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		insights = h.insightRepository.GetInsights(insightIDs)
+	}()
+	
 	wg.Wait()
 
-	result := model.UserFavourites{
-		Audiences: audiences,
-		Charts:    charts,
-		Insights:  insights,
+	// Stitch the responses from the various data sources back together in the
+	// same order as the page of favourite ids was retrieved from the DB
+	result := make([]model.UserFavourite, 0, len(audienceIDs)+len(chartIDs)+len(insightIDs))
+
+	// instead:
+	// iterate over the userFavourites, pick each ID out of the corresponding map I got from
+	// the repositories, put the result in the results slice
+	for _, f := range userFavourites {
+		switch f.ResourceType {
+		case "audience": {
+			result = append(result, model.UserFavourite{Audience: audiences[f.FavouriteId]})
+		}
+		case "chart": {
+			result = append(result, model.UserFavourite{Chart: charts[f.FavouriteId]})
+		}
+		case "insight": {
+			result = append(result, model.UserFavourite{Insight: insights[f.FavouriteId]})
+		}
+		}
 	}
+
 	c.IndentedJSON(http.StatusOK, result)
 }

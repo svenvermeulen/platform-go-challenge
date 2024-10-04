@@ -44,8 +44,12 @@ type User struct {
 	BirthDate time.Time
 }
 
+type UserFavourite struct {
+	Chart    *Chart    `json:",omitempty"`
+	Insight  *Insight  `json:",omitempty"`
+	Audience *Audience `json:",omitempty"`
+}
+
 type UserFavourites struct {
-	Charts    []Chart
-	Insights  []Insight
-	Audiences []Audience
+	Favourites []UserFavourite
 }

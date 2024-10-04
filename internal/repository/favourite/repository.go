@@ -5,8 +5,8 @@ import (
 )
 
 type favouriteEntry struct {
-	favouriteId  uuid.UUID
-	resourceType string
+	FavouriteId  uuid.UUID
+	ResourceType string
 }
 
 type favouriteEntries []favouriteEntry
@@ -45,7 +45,7 @@ func (r *Repository) AddFavourite(userId uuid.UUID, favouriteId uuid.UUID, favou
 
 	// not checking for duplicate entries
 	r.favourites[userId] = append(r.favourites[userId], favouriteEntry{
-		favouriteId:  favouriteId,
-		resourceType: favouriteType,
+		FavouriteId:  favouriteId,
+		ResourceType: favouriteType,
 	})
 }
