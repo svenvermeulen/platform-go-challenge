@@ -11,4 +11,4 @@ test:
 .PHONY: swag
 swag:
 	@echo "==> Updating documentation using swag..."
-	@swag init -d cmd/,api/handler --pd
+	@swag init -d cmd/,internal/handler/ --pd --output api/docs/
