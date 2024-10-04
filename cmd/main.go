@@ -21,7 +21,7 @@ func main() {
 	insightRepo := insight.NewRepository()
 
 	// TODO: FOR QUICK AND DIRTY TEST. REMOVE.
-	userId, _ := uuid.ParseBytes([]byte{0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 6, 7})
+	userId, _ := uuid.Parse("609dac9c-ac79-4dc8-a1f5-f2af7a5519cf")
 	favouriteRepo.AddFavourite(userId, uuid.New(), "audience")
 	favouriteRepo.AddFavourite(userId, uuid.New(), "chart")
 	favouriteRepo.AddFavourite(userId, uuid.New(), "insight")

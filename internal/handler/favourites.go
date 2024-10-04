@@ -1,8 +1,11 @@
 package handler
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 
 	"svenvermeulen/platform-go-challenge/internal/repository/audience"
@@ -12,6 +15,7 @@ import (
 	"svenvermeulen/platform-go-challenge/pkg/model"
 
 	"github.com/gin-gonic/gin"
+	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 )
 
@@ -46,16 +50,23 @@ func NewFavouritesHandler(favouriteRepository *favourite.Repository,
 // @Failure     500
 // @Router      /favourites/:userid [get]
 func (h *FavouritesHandler) GetFavourites(c *gin.Context) {
-	userId, _ := uuid.ParseBytes([]byte{0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 6, 7}) // TODO: Should come from session / token, not request
+	tmpUserId, err := getUserIDFromToken(c)
+	if err != nil {
+		fmt.Printf("error obtaining userid from jwt token: %v\n", err)
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	userId := *tmpUserId
 
-	var err error
+	fmt.Println("Handling request for userid", userId)
+
 	var offset int
 	var pageSize int
 
-	if offset, err = strconv.Atoi(c.Query("offset")); err!=nil {
+	if offset, err = strconv.Atoi(c.Query("offset")); err != nil {
 		offset = 0
 	}
-	if pageSize, err = strconv.Atoi(c.Query("pagesize")); err!=nil {
+	if pageSize, err = strconv.Atoi(c.Query("pagesize")); err != nil {
 		pageSize = 10
 	}
 
@@ -64,6 +75,7 @@ func (h *FavouritesHandler) GetFavourites(c *gin.Context) {
 	// - auth
 	// - move quick and dirty test to nice automated test
 	// - README
+	// - DELETE /favourites
 	// - swagger stuff
 
 	// shown:
@@ -75,7 +87,7 @@ func (h *FavouritesHandler) GetFavourites(c *gin.Context) {
 	//   the call to "favourites" could still work though, with the "charts" being empty.
 	userFavourites := h.favouriteRepository.GetFavourites(userId, offset, pageSize)
 
-	// Get favourite items for current user and extract these into 3 slices of IDs 
+	// Get favourite items for current user and extract these into 3 slices of IDs
 	// IDs are then used to query the various repositories
 	// Then I wait for all the queries to return and stitch the results back together
 	audienceIDs, insightIDs, chartIDs := h.splitUserFavourites(userFavourites)
@@ -106,7 +118,7 @@ func (h *FavouritesHandler) GetFavourites(c *gin.Context) {
 		defer wg.Done()
 		insights = h.insightRepository.GetInsights(insightIDs)
 	}()
-	
+
 	wg.Wait()
 
 	// Stitch the responses from the various data sources back together in the
@@ -116,9 +128,9 @@ func (h *FavouritesHandler) GetFavourites(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, result)
 }
 
-func (*FavouritesHandler) stitchResults(userFavourites favourite.FavouriteEntries, 
-	audiences map[uuid.UUID]*model.Audience, 
-	charts map[uuid.UUID]*model.Chart, 
+func (*FavouritesHandler) stitchResults(userFavourites favourite.FavouriteEntries,
+	audiences map[uuid.UUID]*model.Audience,
+	charts map[uuid.UUID]*model.Chart,
 	insights map[uuid.UUID]*model.Insight) []model.UserFavourite {
 	result := make([]model.UserFavourite, 0, len(userFavourites))
 	for _, f := range userFavourites {
@@ -167,4 +179,55 @@ func (*FavouritesHandler) splitUserFavourites(userFavourites favourite.Favourite
 		}
 	}
 	return audienceIDs, insightIDs, chartIDs
+}
+
+func getUserIDFromToken(c *gin.Context) (*uuid.UUID, error) {
+	header := c.GetHeader("Authorization")
+	if header == "" {
+		// log details about error
+		fmt.Println("No Authorization header provided")
+		return nil, errors.New("no authorization header")
+	}
+
+	parts := strings.Split(header, " ")
+	if len(parts) != 2 {
+		fmt.Println("Incorrectly formatted Authorization header provided")
+		return nil, errors.New("no authorization header")
+	}
+
+	bearerToken := parts[1]
+
+	claims := jwt.MapClaims{}
+
+	_, err := jwt.ParseWithClaims(bearerToken, &claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("incorrect signing method used for jwt token")
+		}
+		// Key should come from some safe storage
+		return []byte("12345678123456781234567812345678"), nil
+	})
+
+	if err != nil {
+		// log details about error
+		fmt.Printf("Error parsing token: %v\n", err)
+		return nil, err
+	}
+
+	for k, v := range claims {
+		fmt.Printf("key: %v, value %v", k, v)
+	}
+
+	if claimValue, ok := claims["userid"]; !ok {
+		return nil, errors.New("userid not present in jwt token claims")
+	} else {
+		s, ok := claimValue.(string)
+		if (!ok) {
+			return nil, errors.New("cannot parse userid claim from jwt token claims as string")
+		}
+		userId, err := uuid.Parse(s)
+		if err!=nil {
+			return nil, errors.New("cannot parse userid from jwt token claims as uuid")
+		}
+		return &userId, nil
+	}
 }
