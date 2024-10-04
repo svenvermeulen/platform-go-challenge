@@ -60,12 +60,11 @@ func (h *FavouritesHandler) GetFavourites(c *gin.Context) {
 	}
 
 	// TODO
-	// - get "start after" and "page size" parameters from the request, for paging
-	// - timeout when querying charts, handle
 	// - some logging
 	// - auth
 	// - move quick and dirty test to nice automated test
 	// - README
+	// - swagger stuff
 
 	// shown:
 	// - using concurrency to retrieve data from multiple sources
@@ -74,43 +73,19 @@ func (h *FavouritesHandler) GetFavourites(c *gin.Context) {
 	// Maybe:
 	// - graceful degradation. If the call to charts service asks for too many charts, it can time out.
 	//   the call to "favourites" could still work though, with the "charts" being empty.
-
-	// TODO: These ids should come from some repository which reads "starred items"
-
-	var wg sync.WaitGroup
-
-	// TODO: Paging in controller method (already supported by favourites repo)
 	userFavourites := h.favouriteRepository.GetFavourites(userId, offset, pageSize)
 
-	// userFavourites now contains the first page of favourites of various types (audience|chart|insight)
-	// I extract these into 3 slices of IDs which I'll use to query the various repositories
+	// Get favourite items for current user and extract these into 3 slices of IDs 
+	// IDs are then used to query the various repositories
 	// Then I wait for all the queries to return and stitch the results back together
+	audienceIDs, insightIDs, chartIDs := h.splitUserFavourites(userFavourites)
 
-	audienceIDs := make([]uuid.UUID, 0, len(userFavourites))
-	insightIDs := make([]uuid.UUID, 0, len(userFavourites))
-	chartIDs := make([]uuid.UUID, 0, len(userFavourites))
-
-	for _, f := range userFavourites {
-		switch f.ResourceType {
-		case "audience": {
-			audienceIDs = append(audienceIDs, f.FavouriteId)
-		}
-		case "chart": {
-			chartIDs = append(chartIDs, f.FavouriteId)
-		}
-		case "insight": {
-			insightIDs = append(insightIDs, f.FavouriteId)
-		}
-		default: {
-			// would log an error here to alert engineer but let request succeed
-		}
-		}
-	}
+	var wg sync.WaitGroup
+	wg.Add(3)
 
 	// AUDIENCES
 	var audiences map[uuid.UUID]*model.Audience
 
-	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		audiences = h.audienceRepository.GetAudiences(audienceIDs)
@@ -119,7 +94,6 @@ func (h *FavouritesHandler) GetFavourites(c *gin.Context) {
 	// CHARTS
 	var charts map[uuid.UUID]*model.Chart
 
-	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		charts = h.chartRepository.GetCharts(chartIDs)
@@ -128,7 +102,6 @@ func (h *FavouritesHandler) GetFavourites(c *gin.Context) {
 	// INSIGHTS
 	var insights map[uuid.UUID]*model.Insight
 
-	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		insights = h.insightRepository.GetInsights(insightIDs)
@@ -138,24 +111,60 @@ func (h *FavouritesHandler) GetFavourites(c *gin.Context) {
 
 	// Stitch the responses from the various data sources back together in the
 	// same order as the page of favourite ids was retrieved from the DB
-	result := make([]model.UserFavourite, 0, len(audienceIDs)+len(chartIDs)+len(insightIDs))
-
-	// instead:
-	// iterate over the userFavourites, pick each ID out of the corresponding map I got from
-	// the repositories, put the result in the results slice
-	for _, f := range userFavourites {
-		switch f.ResourceType {
-		case "audience": {
-			result = append(result, model.UserFavourite{Audience: audiences[f.FavouriteId]})
-		}
-		case "chart": {
-			result = append(result, model.UserFavourite{Chart: charts[f.FavouriteId]})
-		}
-		case "insight": {
-			result = append(result, model.UserFavourite{Insight: insights[f.FavouriteId]})
-		}
-		}
-	}
+	result := h.stitchResults(userFavourites, audiences, charts, insights)
 
 	c.IndentedJSON(http.StatusOK, result)
+}
+
+func (*FavouritesHandler) stitchResults(userFavourites favourite.FavouriteEntries, 
+	audiences map[uuid.UUID]*model.Audience, 
+	charts map[uuid.UUID]*model.Chart, 
+	insights map[uuid.UUID]*model.Insight) []model.UserFavourite {
+	result := make([]model.UserFavourite, 0, len(userFavourites))
+	for _, f := range userFavourites {
+		switch f.ResourceType {
+		case "audience":
+			{
+				result = append(result, model.UserFavourite{Audience: audiences[f.FavouriteId]})
+			}
+		case "chart":
+			{
+				result = append(result, model.UserFavourite{Chart: charts[f.FavouriteId]})
+			}
+		case "insight":
+			{
+				result = append(result, model.UserFavourite{Insight: insights[f.FavouriteId]})
+			}
+		}
+	}
+	return result
+}
+
+// Splits the list of user favourite entries by resource type and returns 3 slices of ids
+func (*FavouritesHandler) splitUserFavourites(userFavourites favourite.FavouriteEntries) ([]uuid.UUID, []uuid.UUID, []uuid.UUID) {
+	audienceIDs := make([]uuid.UUID, 0, len(userFavourites))
+	insightIDs := make([]uuid.UUID, 0, len(userFavourites))
+	chartIDs := make([]uuid.UUID, 0, len(userFavourites))
+
+	for _, f := range userFavourites {
+		switch f.ResourceType {
+		case "audience":
+			{
+				audienceIDs = append(audienceIDs, f.FavouriteId)
+			}
+		case "chart":
+			{
+				chartIDs = append(chartIDs, f.FavouriteId)
+			}
+		case "insight":
+			{
+				insightIDs = append(insightIDs, f.FavouriteId)
+			}
+		default:
+			{
+				// would log an error here to alert engineer but let request succeed
+			}
+		}
+	}
+	return audienceIDs, insightIDs, chartIDs
 }

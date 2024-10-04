@@ -27,7 +27,7 @@ func (r *Repository) GetInsights(ids []uuid.UUID) map[uuid.UUID]*model.Insight {
 			Id:          id,
 			Description: r.generateRandomDescription(),
 		}
-		time.Sleep(50 * time.Millisecond) // TODO: 100 MICROSECOND HERE
+		time.Sleep(100 * time.Microsecond)
 	}
 	return results
 }
