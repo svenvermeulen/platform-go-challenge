@@ -44,6 +44,14 @@ type User struct {
 	BirthDate time.Time
 }
 
+// This is sent when starring an item
+type UserFavouriteShort struct {
+	Description  string 
+	ResourceType string
+	Id           uuid.UUID
+}
+
+// This is returned when listing a user's favourites
 type UserFavourite struct {
 	Description string 
 	Chart       *Chart    `json:",omitempty"`

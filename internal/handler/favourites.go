@@ -187,6 +187,37 @@ func (h *FavouritesHandler) DeleteFavourite(c *gin.Context) {
 	}
 
 	favouriteId := c.Param("favouriteid")
+	// convert to uuid
+
+	// ask repo to delete this
+
+	// return 204 no content if ok
 
 	log.Infof("DELETING favourite with uuid %v for user %v", favouriteId, userId)
+}
+
+func (h *FavouritesHandler) CreateFavourite(c *gin.Context) {
+	userId, err := auth.GetUserIDFromToken(c)
+	if err != nil {
+		log.Infof("Error obtaining userid from jwt token: %v\n", err)
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	var newFavourite model.UserFavouriteShort
+    if err := c.BindJSON(&newFavourite); err != nil {
+		log.Infof("Cannot bind request body to UserFavouriteShort object: %v", err)
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+    }
+
+	switch newFavourite.ResourceType {
+	case "audience", "chart", "insight":
+		log.Infof("Adding favourite with id %v description %v for user %v", newFavourite.Id, newFavourite.Description, userId)
+		h.favouriteRepository.AddFavourite(userId, newFavourite.Description, newFavourite.Id, newFavourite.ResourceType)
+		c.Status(http.StatusCreated)
+	default:
+		log.Infof("Invalid resource type: %v", newFavourite.ResourceType)
+		c.Status(http.StatusBadRequest)
+	}
 }
