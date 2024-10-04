@@ -1,6 +1,7 @@
 package favourite
 
 import (
+	"fmt"
 	"math/rand/v2"
 	"testing"
 
@@ -31,24 +32,26 @@ func TestAddAndRetrieveCorrectFavourite(t *testing.T) {
 
 	// GIVEN a repo with two users' favourites in it
 	r := NewRepository()
-	r.AddFavourite(user1Id, favourite1Id, "chart")
-	r.AddFavourite(user2Id, favourite2Id, "insight")
+	r.AddFavourite(user1Id, "chart1", favourite1Id, "chart")
+	r.AddFavourite(user2Id, "insight1", favourite2Id, "insight")
 
 	// WHEN I retrieve each user's favourites
 	f1 := r.GetFavourites(user1Id, 0, 100)
 	f2 := r.GetFavourites(user2Id, 0, 100)
 
 	// THEN I get the correct favourites for each user
-	assert.Equal(t, f1, favouriteEntries{
+	assert.Equal(t, f1, FavouriteEntries{
 		{
+			Description:  "chart1",
 			FavouriteId:  favourite1Id,
 			ResourceType: "chart",
 		},
 	},
 	)
 
-	assert.Equal(t, f2, favouriteEntries{
+	assert.Equal(t, f2, FavouriteEntries{
 		{
+			Description:  "insight1",
 			FavouriteId:  favourite2Id,
 			ResourceType: "insight",
 		},
@@ -69,7 +72,7 @@ func TestPaging(t *testing.T) {
 		favouriteId := uuid.New()
 		resourceType := []string{"audience", "chart", "insight"}[rand.IntN(3)]
 		favourites[i] = favouriteId
-		r.AddFavourite(userId, favouriteId, resourceType)
+		r.AddFavourite(userId, fmt.Sprintf("my favourite item #%d", i), favouriteId, resourceType)
 	}
 
 	// WHEN I retrieve three pages of ten results
@@ -105,7 +108,7 @@ func TestPagingStartOutOfBounds(t *testing.T) {
 	for _ = range 5 {
 		favouriteId := uuid.New()
 		resourceType := []string{"audience", "chart", "insight"}[rand.IntN(3)]
-		r.AddFavourite(userId, favouriteId, resourceType)
+		r.AddFavourite(userId, "Description", favouriteId, resourceType)
 	}
 
 	// WHEN I retrieve item n+1

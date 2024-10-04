@@ -5,6 +5,7 @@ import (
 )
 
 type FavouriteEntry struct {
+	Description  string
 	FavouriteId  uuid.UUID
 	ResourceType string
 }
@@ -38,13 +39,14 @@ func (r *Repository) GetFavourites(userid uuid.UUID, offset int, pageSize int) F
 	}
 }
 
-func (r *Repository) AddFavourite(userId uuid.UUID, favouriteId uuid.UUID, favouriteType string) {
+func (r *Repository) AddFavourite(userId uuid.UUID, description string, favouriteId uuid.UUID, favouriteType string) {
 	if _, ok := r.favourites[userId]; !ok {
 		r.favourites[userId] = make(FavouriteEntries, 0, 100)
 	}
 
 	// not checking for duplicate entries
 	r.favourites[userId] = append(r.favourites[userId], FavouriteEntry{
+		Description:  description,
 		FavouriteId:  favouriteId,
 		ResourceType: favouriteType,
 	})

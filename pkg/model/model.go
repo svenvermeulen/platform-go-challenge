@@ -45,9 +45,10 @@ type User struct {
 }
 
 type UserFavourite struct {
-	Chart    *Chart    `json:",omitempty"`
-	Insight  *Insight  `json:",omitempty"`
-	Audience *Audience `json:",omitempty"`
+	Description string 
+	Chart       *Chart    `json:",omitempty"`
+	Insight     *Insight  `json:",omitempty"`
+	Audience    *Audience `json:",omitempty"`
 }
 
 type UserFavourites struct {

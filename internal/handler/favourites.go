@@ -1,13 +1,11 @@
 package handler
 
 import (
-	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 	"sync"
 
+	"svenvermeulen/platform-go-challenge/internal/auth"
 	"svenvermeulen/platform-go-challenge/internal/repository/audience"
 	"svenvermeulen/platform-go-challenge/internal/repository/chart"
 	"svenvermeulen/platform-go-challenge/internal/repository/favourite"
@@ -15,8 +13,8 @@ import (
 	"svenvermeulen/platform-go-challenge/pkg/model"
 
 	"github.com/gin-gonic/gin"
-	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
 )
 
 type FavouritesHandler struct {
@@ -50,15 +48,14 @@ func NewFavouritesHandler(favouriteRepository *favourite.Repository,
 // @Failure     500
 // @Router      /favourites/:userid [get]
 func (h *FavouritesHandler) GetFavourites(c *gin.Context) {
-	tmpUserId, err := getUserIDFromToken(c)
+	userId, err := auth.GetUserIDFromToken(c)
 	if err != nil {
-		fmt.Printf("error obtaining userid from jwt token: %v\n", err)
+		log.Errorf("Error obtaining userid from jwt token: %v\n", err)
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
-	userId := *tmpUserId
 
-	fmt.Println("Handling request for userid", userId)
+	log.Info("Retrieving favourites for userid", userId)
 
 	var offset int
 	var pageSize int
@@ -72,7 +69,6 @@ func (h *FavouritesHandler) GetFavourites(c *gin.Context) {
 
 	// TODO
 	// - some logging
-	// - auth
 	// - move quick and dirty test to nice automated test
 	// - README
 	// - DELETE /favourites
@@ -137,15 +133,15 @@ func (*FavouritesHandler) stitchResults(userFavourites favourite.FavouriteEntrie
 		switch f.ResourceType {
 		case "audience":
 			{
-				result = append(result, model.UserFavourite{Audience: audiences[f.FavouriteId]})
+				result = append(result, model.UserFavourite{Description: f.Description, Audience: audiences[f.FavouriteId]})
 			}
 		case "chart":
 			{
-				result = append(result, model.UserFavourite{Chart: charts[f.FavouriteId]})
+				result = append(result, model.UserFavourite{Description: f.Description, Chart: charts[f.FavouriteId]})
 			}
 		case "insight":
 			{
-				result = append(result, model.UserFavourite{Insight: insights[f.FavouriteId]})
+				result = append(result, model.UserFavourite{Description: f.Description, Insight: insights[f.FavouriteId]})
 			}
 		}
 	}
@@ -174,60 +170,23 @@ func (*FavouritesHandler) splitUserFavourites(userFavourites favourite.Favourite
 			}
 		default:
 			{
-				// would log an error here to alert engineer but let request succeed
+				log.Errorf("unknown userfavourite resource type %v", f.ResourceType)
 			}
 		}
 	}
 	return audienceIDs, insightIDs, chartIDs
 }
 
-func getUserIDFromToken(c *gin.Context) (*uuid.UUID, error) {
-	header := c.GetHeader("Authorization")
-	if header == "" {
-		// log details about error
-		fmt.Println("No Authorization header provided")
-		return nil, errors.New("no authorization header")
-	}
+func (h *FavouritesHandler) DeleteFavourite(c *gin.Context) {
 
-	parts := strings.Split(header, " ")
-	if len(parts) != 2 {
-		fmt.Println("Incorrectly formatted Authorization header provided")
-		return nil, errors.New("no authorization header")
-	}
-
-	bearerToken := parts[1]
-
-	claims := jwt.MapClaims{}
-
-	_, err := jwt.ParseWithClaims(bearerToken, &claims, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("incorrect signing method used for jwt token")
-		}
-		// Key should come from some safe storage
-		return []byte("12345678123456781234567812345678"), nil
-	})
-
+	userId, err := auth.GetUserIDFromToken(c)
 	if err != nil {
-		// log details about error
-		fmt.Printf("Error parsing token: %v\n", err)
-		return nil, err
+		log.Infof("Error obtaining userid from jwt token: %v\n", err)
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
 	}
 
-	for k, v := range claims {
-		fmt.Printf("key: %v, value %v", k, v)
-	}
+	favouriteId := c.Param("favouriteid")
 
-	if claimValue, ok := claims["userid"]; !ok {
-		return nil, errors.New("userid not present in jwt token claims")
-	} else {
-		s, ok := claimValue.(string)
-		if (!ok) {
-			return nil, errors.New("cannot parse userid claim from jwt token claims as string")
-		}
-		userId, err := uuid.Parse(s)
-		if err!=nil {
-			return nil, errors.New("cannot parse userid from jwt token claims as uuid")
-		}
-		return &userId, nil
-	}
+	log.Infof("DELETING favourite with uuid %v for user %v", favouriteId, userId)
 }
