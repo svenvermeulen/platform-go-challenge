@@ -16,7 +16,7 @@ func main() {
 
 	// set up router to map http routes to handler functions
 	router := SetupRouter()
-	router.Run("localhost:8086")
+	router.Run("0.0.0.0:8086")
 }
 
 func SetupRouter() *gin.Engine {

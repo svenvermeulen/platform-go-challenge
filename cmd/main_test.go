@@ -57,6 +57,7 @@ func TestHappyPath(t *testing.T) {
 
 	// THEN I get a list of audiences, insights and charts
 	assert.Equal(t, 1, len(result))
+	assert.Equal(t, f.Id, result[0].Chart.Id)
 }
 
 func TestDeletion(t *testing.T) {
