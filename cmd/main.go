@@ -39,9 +39,9 @@ func SetupRouter() *gin.Engine {
 
 	// setup routes
 	router.GET("/favourites", favouritesHandler.GetFavourites)
-	router.POST("/favourites", favouritesHandler.CreateFavourite)
-	router.DELETE("/favourites/:favouriteid", favouritesHandler.DeleteFavourite)
-	router.PATCH("/favourites/:favouriteid", favouritesHandler.UpdateFavourite)
+	router.POST("/favourites", favouritesHandler.CreateUserFavourite)
+	router.DELETE("/favourites/:favouriteid", favouritesHandler.DeleteUserFavourite)
+	router.PATCH("/favourites/:favouriteid", favouritesHandler.UpdateUserFavourite)
 
 	return router
 }

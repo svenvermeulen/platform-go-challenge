@@ -45,6 +45,7 @@ func NewFavouritesHandler(favouriteRepository *favourite.Repository,
 // @Produce     json
 // @Success     200	{object}	[]model.UserFavourite
 // @Failure     400
+// @Failure     401
 // @Failure     404
 // @Failure     500
 // @Router      /favourites/:userid [get]
@@ -175,7 +176,20 @@ func (*FavouritesHandler) splitUserFavourites(userFavourites favourite.Favourite
 	return audienceIDs, insightIDs, chartIDs
 }
 
-func (h *FavouritesHandler) CreateFavourite(c *gin.Context) {
+// CreateUserFavourite godoc
+//
+// @Summary     Create user favourites
+// @Description creates a favourite for a specified user
+// @Tags        favourites
+// @Param       data body model.UserFavouriteShort true "UserFavouriteShort to create"
+// @Produce     json
+// @Success     201	{object}	model.UserFavourite
+// @Failure     400
+// @Failure     401
+// @Failure     404
+// @Failure     500
+// @Router      /favourites [post]
+func (h *FavouritesHandler) CreateUserFavourite(c *gin.Context) {
 	userId, err := auth.GetUserIDFromToken(c)
 	if err != nil {
 		log.Infof("Error obtaining userid from jwt token: %v\n", err)
@@ -207,7 +221,20 @@ func (h *FavouritesHandler) CreateFavourite(c *gin.Context) {
 	}
 }
 
-func (h *FavouritesHandler) UpdateFavourite(c *gin.Context) {
+// UpdateUserFavourite godoc
+//
+// @Summary     Update user favourites
+// @Description updates a favourite for a specified user
+// @Tags        favourites
+// @Param       data body model.UserFavouriteShort true "UserFavouriteShort to update"
+// @Produce     json
+// @Success     204
+// @Failure     400
+// @Failure     401
+// @Failure     404
+// @Failure     500
+// @Router      /favourites/:favouriteid [patch]
+func (h *FavouritesHandler) UpdateUserFavourite(c *gin.Context) {
 
 	userId, err := auth.GetUserIDFromToken(c)
 	if err != nil {
@@ -242,7 +269,20 @@ func (h *FavouritesHandler) UpdateFavourite(c *gin.Context) {
 
 }
 
-func (h *FavouritesHandler) DeleteFavourite(c *gin.Context) {
+// DeleteUserFavourite godoc
+//
+// @Summary     Delete user favourite
+// @Description Deletes a favourite for a specified user
+// @Tags        favourites
+// @Param       favouriteid path uuid true "Favourite ID"
+// @Produce     json
+// @Success     204
+// @Failure     400
+// @Failure     401
+// @Failure     404
+// @Failure     500
+// @Router      /favourites/:favouriteid [delete]
+func (h *FavouritesHandler) DeleteUserFavourite(c *gin.Context) {
 
 	userId, err := auth.GetUserIDFromToken(c)
 	if err != nil {
