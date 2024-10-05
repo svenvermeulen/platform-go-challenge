@@ -9,8 +9,6 @@ COPY go.mod go.sum ./
 RUN go mod download -x
 
 COPY ./ ./
-RUN ls -la
-RUN ls -la /usr/local/go/src/math/rand/
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o /favourites-service ./cmd/main.go
 
