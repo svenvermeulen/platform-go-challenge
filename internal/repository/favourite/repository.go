@@ -1,6 +1,8 @@
 package favourite
 
 import (
+	"errors"
+
 	"github.com/google/uuid"
 )
 
@@ -69,5 +71,27 @@ func (r *Repository) DeleteFavourite(userId uuid.UUID, favouriteId uuid.UUID) er
 	}
 	// no actual errors in this mock implementation, a real implementation
 	// would contact a DB etc. and potentially return an error
+	return nil
+}
+
+func (r *Repository) UpdateFavourite(userId uuid.UUID, description string, favouriteId uuid.UUID, favouriteType string) error {
+	if _, ok := r.favourites[userId]; !ok {
+		// user doesn't exist. Deletion succeeds silently.
+		return errors.New("user not found")
+	}
+
+	// update element with favouriteId
+	found := false
+	for i, favourite := range r.favourites[userId] {
+		if favourite.FavouriteId==favouriteId {
+			r.favourites[userId][i].Description = description
+			r.favourites[userId][i].ResourceType = favouriteType
+			found = true
+		}
+	}
+	if (!found){
+		return errors.New("favourite not found")
+	}
+
 	return nil
 }

@@ -113,6 +113,67 @@ func TestDeletion(t* testing.T) {
 	assert.Equal(t, 1, len(result))
 }
 
+func TestUpdate(t* testing.T) {
+	router := SetupRouter()
+	userId := uuid.New()
+
+	
+
+	// GIVEN a user with a favourite item
+	f := model.UserFavouriteShort{
+		Description:  "initial description",
+		ResourceType: "chart",
+		Id:           uuid.New(),
+	}
+
+	bodyBytes, err := json.Marshal(f)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	body := bytes.NewBuffer(bodyBytes)
+
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest("POST", "/favourites", body)
+	req.Header.Add("Authorization", getAuthToken(userId))
+	require.NoError(t, err, "error creating http request")
+	router.ServeHTTP(w, req)
+	require.Equal(t, 201, w.Code)
+	
+	// WHEN I update the description
+	w = httptest.NewRecorder()
+	f.Description = "NEW DESCRIPTION"
+	bodyBytes, err = json.Marshal(f)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	body = bytes.NewBuffer(bodyBytes)
+	
+	req, err = http.NewRequest("PATCH", fmt.Sprintf("/favourites/%v", f.Id), body)
+	req.Header.Add("Authorization", getAuthToken(userId))
+	require.NoError(t, err, "error creating http request")
+	router.ServeHTTP(w, req)
+	require.Equal(t, 204, w.Code)
+
+	// WHEN I retrieve the user's favourites
+	w = httptest.NewRecorder()
+	req, err = http.NewRequest("GET", "/favourites", nil)
+	req.Header.Add("Authorization", getAuthToken(userId))
+	require.NoError(t, err, "error creating http request")
+	router.ServeHTTP(w, req)
+	require.Equal(t, 200, w.Code)
+
+	result := []model.UserFavourite{}
+	if err := json.NewDecoder(w.Result().Body).Decode(&result); err != nil {
+		t.Fatalf("could not decode response body: %s", err)
+	}
+
+	// THEN I get a list 1 favourite
+	assert.Equal(t, 1, len(result))
+	assert.Equal(t, "NEW DESCRIPTION", result[0].Description)
+}
+
 func getAuthToken(userId uuid.UUID) string {
 	claims := jwt.MapClaims{
 		"subject": "favouritessvc",

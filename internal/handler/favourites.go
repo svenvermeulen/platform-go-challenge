@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"sync"
@@ -174,6 +175,73 @@ func (*FavouritesHandler) splitUserFavourites(userFavourites favourite.Favourite
 	return audienceIDs, insightIDs, chartIDs
 }
 
+func (h *FavouritesHandler) CreateFavourite(c *gin.Context) {
+	userId, err := auth.GetUserIDFromToken(c)
+	if err != nil {
+		log.Infof("Error obtaining userid from jwt token: %v\n", err)
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	var newFavourite model.UserFavouriteShort
+    if err := c.BindJSON(&newFavourite); err != nil {
+		log.Infof("Cannot bind request body to UserFavouriteShort object: %v", err)
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+    }
+
+	switch newFavourite.ResourceType {
+	case "audience", "chart", "insight":
+		log.Infof("Adding favourite with id %v description %v for user %v", newFavourite.Id, newFavourite.Description, userId)
+		h.favouriteRepository.AddFavourite(userId, newFavourite.Description, newFavourite.Id, newFavourite.ResourceType)
+		c.Status(http.StatusCreated)
+		body, err := json.Marshal(newFavourite)
+		if err!=nil {
+			log.Errorf("error marshalling favourite to json: %v", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+		}
+		c.Writer.Write(body)
+	default:
+		log.Infof("Invalid resource type: %v", newFavourite.ResourceType)
+		c.Status(http.StatusBadRequest)
+	}
+}
+
+func (h *FavouritesHandler) UpdateFavourite(c *gin.Context) {
+
+	userId, err := auth.GetUserIDFromToken(c)
+	if err != nil {
+		log.Infof("Error obtaining userid from jwt token: %v\n", err)
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	favouriteId, err := uuid.Parse(c.Param("favouriteid"))
+	if err!=nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	
+	var updatedFavourite model.UserFavouriteShort
+    if err := c.BindJSON(&updatedFavourite); err != nil {
+		log.Infof("Cannot bind request body to UserFavouriteShort object: %v", err)
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+    }
+
+	// ask repo to update this
+	log.Infof("UPDATING favourite with uuid %v for user %v", favouriteId, userId)
+	h.favouriteRepository.UpdateFavourite(userId, 
+		updatedFavourite.Description,
+		favouriteId,
+		updatedFavourite.ResourceType)
+
+	// return 204 no content if ok
+	// normally would return updated object
+	c.Status(http.StatusNoContent)
+
+}
+
 func (h *FavouritesHandler) DeleteFavourite(c *gin.Context) {
 
 	userId, err := auth.GetUserIDFromToken(c)
@@ -196,30 +264,4 @@ func (h *FavouritesHandler) DeleteFavourite(c *gin.Context) {
 	// return 204 no content if ok
 	c.Status(http.StatusNoContent)
 
-}
-
-func (h *FavouritesHandler) CreateFavourite(c *gin.Context) {
-	userId, err := auth.GetUserIDFromToken(c)
-	if err != nil {
-		log.Infof("Error obtaining userid from jwt token: %v\n", err)
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
-
-	var newFavourite model.UserFavouriteShort
-    if err := c.BindJSON(&newFavourite); err != nil {
-		log.Infof("Cannot bind request body to UserFavouriteShort object: %v", err)
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
-    }
-
-	switch newFavourite.ResourceType {
-	case "audience", "chart", "insight":
-		log.Infof("Adding favourite with id %v description %v for user %v", newFavourite.Id, newFavourite.Description, userId)
-		h.favouriteRepository.AddFavourite(userId, newFavourite.Description, newFavourite.Id, newFavourite.ResourceType)
-		c.Status(http.StatusCreated)
-	default:
-		log.Infof("Invalid resource type: %v", newFavourite.ResourceType)
-		c.Status(http.StatusBadRequest)
-	}
 }
