@@ -104,3 +104,4 @@ This is used to identify the current user.
 
 The token should be included as a bearer token in an authorization header, which is supplied in the `curl` examples above.
 
+A production-ready version would include more tests, and timeouts when fetching data from external services, potentially also graceful degradation.

@@ -69,17 +69,6 @@ func (h *FavouritesHandler) GetFavourites(c *gin.Context) {
 		pageSize = 10
 	}
 
-	// TODO
-	// - README
-	// - swagger stuff
-
-	// shown:
-	// - using concurrency to retrieve data from multiple sources
-	// - using result paging for more responsive list endpoints
-	// - using userid from session/token for security
-	// Maybe:
-	// - graceful degradation. If the call to charts service asks for too many charts, it can time out.
-	//   the call to "favourites" could still work though, with the "charts" being empty.
 	userFavourites := h.favouriteRepository.GetFavourites(userId, offset, pageSize)
 
 	// Get favourite items for current user and extract these into 3 slices of IDs

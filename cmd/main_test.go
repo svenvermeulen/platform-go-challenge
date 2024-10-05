@@ -168,7 +168,7 @@ func TestUpdate(t *testing.T) {
 		t.Fatalf("could not decode response body: %s", err)
 	}
 
-	// THEN I get a list 1 favourite
+	// THEN I get a list with 1 favourite, with the correct description
 	assert.Equal(t, 1, len(result))
 	assert.Equal(t, "NEW DESCRIPTION", result[0].Description)
 }
