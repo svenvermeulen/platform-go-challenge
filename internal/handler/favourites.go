@@ -198,11 +198,11 @@ func (h *FavouritesHandler) CreateUserFavourite(c *gin.Context) {
 	}
 
 	var newFavourite model.UserFavouriteShort
-    if err := c.BindJSON(&newFavourite); err != nil {
+	if err := c.BindJSON(&newFavourite); err != nil {
 		log.Infof("Cannot bind request body to UserFavouriteShort object: %v", err)
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
-    }
+	}
 
 	switch newFavourite.ResourceType {
 	case "audience", "chart", "insight":
@@ -210,7 +210,7 @@ func (h *FavouritesHandler) CreateUserFavourite(c *gin.Context) {
 		h.favouriteRepository.AddFavourite(userId, newFavourite.Description, newFavourite.Id, newFavourite.ResourceType)
 		c.Status(http.StatusCreated)
 		body, err := json.Marshal(newFavourite)
-		if err!=nil {
+		if err != nil {
 			log.Errorf("error marshalling favourite to json: %v", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 		}
@@ -244,21 +244,21 @@ func (h *FavouritesHandler) UpdateUserFavourite(c *gin.Context) {
 	}
 
 	favouriteId, err := uuid.Parse(c.Param("favouriteid"))
-	if err!=nil {
+	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	
+
 	var updatedFavourite model.UserFavouriteShort
-    if err := c.BindJSON(&updatedFavourite); err != nil {
+	if err := c.BindJSON(&updatedFavourite); err != nil {
 		log.Infof("Cannot bind request body to UserFavouriteShort object: %v", err)
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
-    }
+	}
 
 	// ask repo to update this
 	log.Infof("UPDATING favourite with uuid %v for user %v", favouriteId, userId)
-	h.favouriteRepository.UpdateFavourite(userId, 
+	h.favouriteRepository.UpdateFavourite(userId,
 		updatedFavourite.Description,
 		favouriteId,
 		updatedFavourite.ResourceType)
@@ -292,11 +292,11 @@ func (h *FavouritesHandler) DeleteUserFavourite(c *gin.Context) {
 	}
 
 	favouriteId, err := uuid.Parse(c.Param("favouriteid"))
-	if err!=nil {
+	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
-	
+
 	// ask repo to delete this
 	log.Infof("DELETING favourite with uuid %v for user %v", favouriteId, userId)
 	h.favouriteRepository.DeleteFavourite(userId, favouriteId)

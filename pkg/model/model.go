@@ -46,14 +46,14 @@ type User struct {
 
 // This is sent when starring an item
 type UserFavouriteShort struct {
-	Description  string 
+	Description  string
 	ResourceType string
 	Id           uuid.UUID
 }
 
 // This is returned when listing a user's favourites
 type UserFavourite struct {
-	Description string 
+	Description string
 	Chart       *Chart    `json:",omitempty"`
 	Insight     *Insight  `json:",omitempty"`
 	Audience    *Audience `json:",omitempty"`

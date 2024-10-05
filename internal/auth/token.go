@@ -41,11 +41,11 @@ func GetUserIDFromToken(c *gin.Context) (uuid.UUID, error) {
 		return uuid.Nil, errors.New("userid not present in jwt token claims")
 	} else {
 		s, ok := claimValue.(string)
-		if (!ok) {
+		if !ok {
 			return uuid.Nil, errors.New("cannot parse userid claim from jwt token claims as string")
 		}
 		userId, err := uuid.Parse(s)
-		if err!=nil {
+		if err != nil {
 			return uuid.Nil, errors.New("cannot parse userid from jwt token claims as uuid")
 		}
 		return userId, nil

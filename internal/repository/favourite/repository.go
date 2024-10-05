@@ -63,8 +63,8 @@ func (r *Repository) DeleteFavourite(userId uuid.UUID, favouriteId uuid.UUID) er
 	// find element with favouriteId, replace it with last element in slice
 	// then return a 1-shorter slice
 	for i, favourite := range r.favourites[userId] {
-		if favourite.FavouriteId==favouriteId {
-			l:=len(r.favourites[userId])
+		if favourite.FavouriteId == favouriteId {
+			l := len(r.favourites[userId])
 			r.favourites[userId][i] = r.favourites[userId][l-1]
 			r.favourites[userId] = r.favourites[userId][:l-1]
 		}
@@ -83,13 +83,13 @@ func (r *Repository) UpdateFavourite(userId uuid.UUID, description string, favou
 	// update element with favouriteId
 	found := false
 	for i, favourite := range r.favourites[userId] {
-		if favourite.FavouriteId==favouriteId {
+		if favourite.FavouriteId == favouriteId {
 			r.favourites[userId][i].Description = description
 			r.favourites[userId][i].ResourceType = favouriteType
 			found = true
 		}
 	}
-	if (!found){
+	if !found {
 		return errors.New("favourite not found")
 	}
 

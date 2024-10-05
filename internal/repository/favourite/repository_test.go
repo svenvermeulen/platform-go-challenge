@@ -131,10 +131,9 @@ func TestDeleteFavourite(t *testing.T) {
 	r.AddFavourite(userId, "audience1", favourite1Id, "audience")
 	r.AddFavourite(userId, "chart1", favourite2Id, "chart")
 	r.AddFavourite(userId, "insight1", favourite3Id, "insight")
-	
 
 	// WHEN I delete the second favourite
-	r.DeleteFavourite(userId,favourite2Id)
+	r.DeleteFavourite(userId, favourite2Id)
 
 	// THEN I retrieve the first and third favourites
 	favourites := r.GetFavourites(userId, 0, 10)

@@ -14,10 +14,6 @@ import (
 // @title Favourites API
 func main() {
 
-
-	
-
-
 	// set up router to map http routes to handler functions
 	router := SetupRouter()
 	router.Run("localhost:8086")
@@ -32,7 +28,6 @@ func SetupRouter() *gin.Engine {
 
 	// set up http handlers
 	favouritesHandler := handler.NewFavouritesHandler(favouriteRepo, audienceRepo, chartRepo, insightRepo)
-
 
 	log.Info("Setting up gin router")
 	router := gin.Default()
