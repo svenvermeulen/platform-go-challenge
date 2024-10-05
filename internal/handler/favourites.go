@@ -68,10 +68,7 @@ func (h *FavouritesHandler) GetFavourites(c *gin.Context) {
 	}
 
 	// TODO
-	// - some logging
-	// - move quick and dirty test to nice automated test
 	// - README
-	// - DELETE /favourites
 	// - swagger stuff
 
 	// shown:
@@ -186,14 +183,19 @@ func (h *FavouritesHandler) DeleteFavourite(c *gin.Context) {
 		return
 	}
 
-	favouriteId := c.Param("favouriteid")
-	// convert to uuid
-
+	favouriteId, err := uuid.Parse(c.Param("favouriteid"))
+	if err!=nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+	
 	// ask repo to delete this
+	log.Infof("DELETING favourite with uuid %v for user %v", favouriteId, userId)
+	h.favouriteRepository.DeleteFavourite(userId, favouriteId)
 
 	// return 204 no content if ok
+	c.Status(http.StatusNoContent)
 
-	log.Infof("DELETING favourite with uuid %v for user %v", favouriteId, userId)
 }
 
 func (h *FavouritesHandler) CreateFavourite(c *gin.Context) {

@@ -51,3 +51,23 @@ func (r *Repository) AddFavourite(userId uuid.UUID, description string, favourit
 		ResourceType: favouriteType,
 	})
 }
+
+func (r *Repository) DeleteFavourite(userId uuid.UUID, favouriteId uuid.UUID) error {
+	if _, ok := r.favourites[userId]; !ok {
+		// user doesn't exist. Deletion succeeds silently.
+		return nil
+	}
+
+	// find element with favouriteId, replace it with last element in slice
+	// then return a 1-shorter slice
+	for i, favourite := range r.favourites[userId] {
+		if favourite.FavouriteId==favouriteId {
+			l:=len(r.favourites[userId])
+			r.favourites[userId][i] = r.favourites[userId][l-1]
+			r.favourites[userId] = r.favourites[userId][:l-1]
+		}
+	}
+	// no actual errors in this mock implementation, a real implementation
+	// would contact a DB etc. and potentially return an error
+	return nil
+}

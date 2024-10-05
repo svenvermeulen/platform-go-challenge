@@ -117,3 +117,39 @@ func TestPagingStartOutOfBounds(t *testing.T) {
 	// I get an empty list of favourites
 	assert.Equal(t, 0, len(f))
 }
+
+func TestDeleteFavourite(t *testing.T) {
+	// if I add three favourites and delete the middle one,
+	// a read should return the first and last ones
+	userId := uuid.New()
+	favourite1Id := uuid.New()
+	favourite2Id := uuid.New()
+	favourite3Id := uuid.New()
+
+	// GIVEN a repo with two users' favourites in it
+	r := NewRepository()
+	r.AddFavourite(userId, "audience1", favourite1Id, "audience")
+	r.AddFavourite(userId, "chart1", favourite2Id, "chart")
+	r.AddFavourite(userId, "insight1", favourite3Id, "insight")
+	
+
+	// WHEN I delete the second favourite
+	r.DeleteFavourite(userId,favourite2Id)
+
+	// THEN I retrieve the first and third favourites
+	favourites := r.GetFavourites(userId, 0, 10)
+
+	assert.Equal(t, favourites, FavouriteEntries{
+		{
+			Description:  "audience1",
+			FavouriteId:  favourite1Id,
+			ResourceType: "audience",
+		},
+		{
+			Description:  "insight1",
+			FavouriteId:  favourite3Id,
+			ResourceType: "insight",
+		},
+	},
+	)
+}

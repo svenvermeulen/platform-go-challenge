@@ -30,21 +30,6 @@ func SetupRouter() *gin.Engine {
 	chartRepo := chart.NewRepository()
 	insightRepo := insight.NewRepository()
 
-
-/*
-	// TODO: FOR QUICK AND DIRTY TEST. REMOVE.
-	userId, _ := uuid.Parse("609dac9c-ac79-4dc8-a1f5-f2af7a5519cf")
-	favouriteRepo.AddFavourite(userId, "audience I like 1", uuid.New(), "audience")
-	favouriteRepo.AddFavourite(userId, "chart I like 1", uuid.New(), "chart")
-	favouriteRepo.AddFavourite(userId, "insight I like 1", uuid.New(), "insight")
-	favouriteRepo.AddFavourite(userId, "audience I like 2", uuid.New(), "audience")
-	favouriteRepo.AddFavourite(userId, "audience I like 3", uuid.New(), "audience")
-	favouriteRepo.AddFavourite(userId, "chart I like 2", uuid.New(), "chart")
-	favouriteRepo.AddFavourite(userId, "chart I like 3", uuid.New(), "chart")
-	favouriteRepo.AddFavourite(userId, "insight I like 2", uuid.New(), "insight")
-	favouriteRepo.AddFavourite(userId, "insight I like 3",  uuid.New(), "insight")
-*/
-
 	// set up http handlers
 	favouritesHandler := handler.NewFavouritesHandler(favouriteRepo, audienceRepo, chartRepo, insightRepo)
 
@@ -55,6 +40,7 @@ func SetupRouter() *gin.Engine {
 	// setup routes
 	router.GET("/favourites", favouritesHandler.GetFavourites)
 	router.POST("/favourites", favouritesHandler.CreateFavourite)
+	router.DELETE("/favourites/:favouriteid", favouritesHandler.DeleteFavourite)
 
 	return router
 }
