@@ -91,7 +91,7 @@ $ curl -f 'http://localhost:8086/favourites?offset=0&pagesize=10' -H "Authorizat
 
 ## About the implementation
 I chose to implement the web server without any data persistence. 
-I added some tests against a few endpoints in ![cmd/main_test.go](main_test.go) and some unit tests for one of the repositories in ![internal/repository/favourite/repository_test.go](repository_test.go).
+I added some tests against a few endpoints in ![main_test.go](cmd/main_test.go) and some unit tests for one of the repositories in ![repository_test.go](internal/repository/favourite/repository_test.go).
 
 The `/favourites` endpoint supports paging to improve response time.
 
