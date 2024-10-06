@@ -90,7 +90,7 @@ $ curl -f 'http://localhost:8086/favourites?offset=0&pagesize=10' -H "Authorizat
     }
 ]'
 
-For full API documentation, see ![swagger.json](api/docs/swagger.json) or visit `localhost:8086/docs` when the service is running.
+For full API documentation, visit `http://localhost:8086/swagger/index.html` when the service is running.
 
 ```
 
